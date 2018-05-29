@@ -134,7 +134,7 @@ const wrap = (opts: Options) => {
     offResize();
     offResize = null;
     if (p.hideCursor) {
-      p.out.write(esc.cursorShow);
+      process.stdout.write(esc.cursorShow);
     }
   };
   p.pause = pause;
@@ -143,7 +143,7 @@ const wrap = (opts: Options) => {
     offKeypress = onKeypress(process.stdin, onKey);
     offResize = onResize(process.stdout, onNewSize);
     if (p.hideCursor) {
-      p.out.write(esc.cursorHide);
+      process.stdout.write(esc.cursorHide);
     }
   };
   p.resume = resume;
