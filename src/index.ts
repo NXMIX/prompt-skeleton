@@ -26,7 +26,7 @@ const enum ActionNames {
 type ActionMap = { [key in ActionNames]?: (ch: string) => void };
 
 const action = (key: Key): ActionNames | false => {
-  let code = key.raw.charCodeAt(0);
+  const code = key.raw.charCodeAt(0);
 
   if (key.ctrl) {
     if (key.name === "a") return ActionNames.First;
@@ -108,7 +108,7 @@ const wrap = (opts: Options) => {
   if ("function" !== typeof p._) p._ = p.bell;
 
   const onKey = (key: Key) => {
-    let a = action(key);
+    const a = action(key);
     if (a === false) p._(key.raw);
     else if ("function" === typeof p[a]) {
       p[a](key);
@@ -130,9 +130,9 @@ const wrap = (opts: Options) => {
   const pause = () => {
     if (!offKeypress) return;
     offKeypress();
-    offKeypress = null;
+    offKeypress = undefined;
     offResize();
-    offResize = null;
+    offResize = undefined;
     if (p.hideCursor) {
       process.stdout.write(esc.cursorShow);
     }
@@ -151,14 +151,17 @@ const wrap = (opts: Options) => {
   return new Promise((resolve, reject) => {
     let isClosed = false;
     p.close = (): void => {
-      if (isClosed) return null;
+      if (isClosed) return;
       isClosed = true;
 
       p.out.unpipe(process.stdout);
       pause();
 
-      if (p.aborted) reject(p.value);
-      else resolve(p.value);
+      if (p.aborted) {
+        reject(p.value);
+      } else {
+        resolve(p.value);
+      }
     };
     process.on("beforeExit", () => p.close());
 
