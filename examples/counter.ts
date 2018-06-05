@@ -16,4 +16,4 @@ const prompt = wrap({
   }
 });
 
-prompt.then(console.log).catch(console.error);
+prompt.then(console.log.bind(console, "Submitted:")).catch(console.error.bind(console, "Aborted:"));
