@@ -7,7 +7,9 @@ import { DiffStream } from "ansi-diff-stream";
 import * as esc from "ansi-escapes";
 import onKeypress = require("@derhuerst/cli-on-key");
 import { Key, OffKeyPress } from "@derhuerst/cli-on-key";
-import { get as termSize } from "window-size";
+
+// tslint:disable-next-line no-empty
+const noop = () => {};
 
 const enum ActionNames {
   First = "first",
@@ -23,11 +25,9 @@ const enum ActionNames {
   Left = "left"
 }
 
-type ActionMap = { [key in ActionNames]?: (ch: string) => void };
+// type ActionMap = { [key in ActionNames]?: (ch: string) => void };
 
 const action = (key: Key): ActionNames | false => {
-  const code = key.raw.charCodeAt(0);
-
   if (key.ctrl) {
     if (key.name === "a") return ActionNames.First;
     if (key.name === "c") return ActionNames.Abort;
@@ -37,8 +37,8 @@ const action = (key: Key): ActionNames | false => {
   }
   if (key.name === "return") return ActionNames.Submit;
   if (key.name === "enter") return ActionNames.Submit; // ctrl + J
-  if (key.name === "backspace") return ActionNames.Delete;
-  if (key.name === "abort") return ActionNames.Abort;
+
+  if (key.name === "backspace" || key.name === "delete") return ActionNames.Delete;
   if (key.name === "escape") return ActionNames.Abort;
   if (key.name === "tab") return ActionNames.Next;
 
@@ -46,8 +46,6 @@ const action = (key: Key): ActionNames | false => {
   if (key.name === "down") return ActionNames.Down;
   if (key.name === "right") return ActionNames.Right;
   if (key.name === "left") return ActionNames.Left;
-  if (code === 8747) ActionNames.Left; // alt + B
-  if (code === 402) return ActionNames.Right; // alt + F
 
   return false;
 };
@@ -63,6 +61,9 @@ const onResize = (stream: stream.Stream, cb: () => void) => {
 export interface Options {
   value?: any;
   hideCursor?: boolean;
+
+  stdin?: stream.Readable;
+  stdout?: stream.Writable;
 
   render?(x: boolean): void;
 
@@ -96,14 +97,19 @@ interface P extends Options {
 const wrap = (opts: Options) => {
   const p = opts as P;
   p.out = differ();
-  p.out.pipe(process.stdout);
+  p.value = typeof opts.value === "undefined" ? "" : opts.value;
+  // p.aborted = typeof opts.aborted !== "undefined" ? opts.aborted : true;
+  p.stdin = p.stdin || process.stdin;
+  p.stdout = p.stdout || process.stdout;
+  p.render = p.render || noop;
+  p.out.pipe(p.stdout);
 
   if ("undefined" === typeof p.hideCursor) {
     p.hideCursor = true;
   }
 
   p.bell = () => {
-    process.stdout.write(esc.beep);
+    p.stdout.write(esc.beep);
   };
   if ("function" !== typeof p._) p._ = p.bell;
 
@@ -113,19 +119,20 @@ const wrap = (opts: Options) => {
     else if ("function" === typeof p[a]) {
       p[a](key);
     } else if (a === "abort") {
+      p.aborted = true;
       p.close();
     } else {
-      process.stdout.write(esc.beep);
+      p.stdout.write(esc.beep);
     }
   };
 
   const onNewSize = () => {
-    const { width, height } = termSize();
     p.out.reset();
     p.render(true);
   };
 
-  let offKeypress: OffKeyPress, offResize: () => void;
+  let offKeypress: OffKeyPress;
+  let offResize: () => void;
 
   const pause = () => {
     if (!offKeypress) return;
@@ -134,40 +141,42 @@ const wrap = (opts: Options) => {
     offResize();
     offResize = undefined;
     if (p.hideCursor) {
-      process.stdout.write(esc.cursorShow);
+      p.stdout.write(esc.cursorShow);
     }
   };
   p.pause = pause;
   const resume = () => {
     if (offKeypress) return;
-    offKeypress = onKeypress(process.stdin, onKey);
-    offResize = onResize(process.stdout, onNewSize);
+    offKeypress = onKeypress(p.stdin, onKey);
+    offResize = onResize(p.stdout, onNewSize);
     if (p.hideCursor) {
-      process.stdout.write(esc.cursorHide);
+      p.stdout.write(esc.cursorHide);
     }
   };
   p.resume = resume;
 
   return new Promise((resolve, reject) => {
     let isClosed = false;
+    const closeHandler = () => p.close();
     p.close = (): void => {
       if (isClosed) return;
       isClosed = true;
 
-      p.out.unpipe(process.stdout);
+      p.out.unpipe(p.stdout);
       pause();
 
+      process.removeListener("beforeExit", closeHandler);
       if (p.aborted) {
         reject(p.value);
       } else {
         resolve(p.value);
       }
     };
-    process.on("beforeExit", () => p.close());
+    process.addListener("beforeExit", closeHandler);
 
     if ("function" !== typeof p.submit) p.submit = p.close;
     resume();
-    p.render(true);
+    p.render(false); // false means it's not triggered by resize
   });
 };
 
