@@ -2,10 +2,14 @@
   "name": "@nxmix/prompt-skeleton",
   "main": "dist/index.js",
   "typings": "dist/types/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NXMIX/emoji-seq-match.git"
+  },
   "files": [
     "dist"
   ],
-  "version": "1.0.2",
+  "version": "0.0.0-development",
   "scripts": {
     "lint": "tslint -p tsconfig.json -t codeFrame 'src/**/*.ts'",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
@@ -20,7 +24,8 @@
     "prepare": "npm run build",
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "test:prod": "npm run lint && npm run test -- --coverage --no-cache"
+    "test:prod": "npm run lint && npm run test -- --coverage --no-cache",
+    "travis-deploy-once": "travis-deploy-once"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
@@ -85,7 +90,8 @@
     "tslint-config-prettier": "^1.13.0",
     "tslint-config-standard": "^7.0.0",
     "typescript": "^2.9.2",
-    "validate-commit-msg": "^2.14.0"
+    "validate-commit-msg": "^2.14.0",
+    "travis-deploy-once": "^5.0.0"
   },
   "dependencies": {
     "@derhuerst/cli-on-key": "^0.1.0",
