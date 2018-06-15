@@ -1,5 +1,7 @@
 # Overview
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/NXMIX/prompt-skeleton.svg)](https://greenkeeper.io/)
+
 This repo. is a rewrite of [prompt-skeleton](https://github.com/derhuerst/prompt-skeleton) in [typescript](https://www.typescriptlang.org). So the type definitions are "batteries-included".
 
 ## Usage
