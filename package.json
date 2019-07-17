@@ -71,7 +71,7 @@
   "devDependencies": {
     "@nxmix/readable-ansi": "^1.0.1",
     "@types/jest": "^23.1.0",
-    "@types/node": "^10.3.3",
+    "@types/node": "^12.6.7",
     "@types/strip-ansi": "^3.0.0",
     "@types/through2": "^2.0.33",
     "commitizen": "^2.10.1",
